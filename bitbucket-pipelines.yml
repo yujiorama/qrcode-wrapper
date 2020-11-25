@@ -1,0 +1,90 @@
+definitions:
+  steps:
+    - step:
+        name: &syntax-check
+        script:
+          - echo TODO shellcheck
+        condition:
+          changesets:
+            includePaths:
+              - qrcode-wrapper/Dockerfile
+              - 'qrcode-wrapper/**/*.sh'
+    - step:
+        name: &lint
+        script:
+          - echo TODO hadolint
+        condition:
+          changesets:
+            includePaths:
+              - qrcode-wrapper/Dockerfile
+    - step:
+        name: &build-image
+        caches:
+          - docker
+        script:
+          - echo TODO build docker image
+        service:
+          - docker
+    - step:
+        name: &dockle-scan
+        caches:
+          - docker
+        script:
+          - echo TODO dockle
+        service:
+          - docker
+    - step:
+        name: &test
+        caches:
+          - docker
+        script:
+          - echo TODO test
+        service:
+          - docker
+    - step:
+        name: &publish-image
+        deployment: test
+        caches:
+          - docker
+        script:
+          - echo TODO publish-image
+        service:
+          - docker
+
+pipelines:
+  tags:
+    '**':
+      - parallel:
+        - step: *syntax-check
+        - step: *lint
+      - step: *build-image
+      - parallel:
+        - step: *dockle-scan
+        - step: *test
+        - step: *publish-image
+  pull-requests:
+    '**':
+      - parallel:
+        - step: *syntax-check
+        - step: *lint
+      - parallel:
+        - step: *dockle-scan
+        - step: *test
+
+  custom:
+    renovate:
+      - step:
+          name: renovate
+          image: renovate/renovate
+          script:
+            - git config --global user.email 'yujiorama+renovate-bot@gmail.com'
+            - git config --global user.name 'Renovate Bot'
+            - >
+              renovate
+              --platform bitbucket
+              --username yujiorama
+              --password $RENOVATE_PASSWORD
+              --git-author "$(git config user.email)"
+              --onboarding true
+              --onboarding-config '{"extends":["config:base"]}'
+              $BITBUCKET_REPO_FULL_NAME
