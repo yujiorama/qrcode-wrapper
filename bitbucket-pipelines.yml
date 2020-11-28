@@ -73,6 +73,7 @@ definitions:
         script:
           - sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
           - sh -c "$(curl -fsSL https://git.io/shellspec)" -- -d /usr/local/shellspec -b /usr/local/bin --yes
+          - docker load --input=./test-reports/qrcode-wrapper.tar
           - task test
         services:
           - docker
@@ -92,6 +93,7 @@ definitions:
           - docker
         script:
           - sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - docker load --input=./test-reports/qrcode-wrapper.tar
           - task publish-image
         services:
           - docker

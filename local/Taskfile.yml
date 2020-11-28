@@ -1,0 +1,43 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  build:
+    desc: build local image.
+    deps: []
+    silent: false
+    sources:
+      - './**'
+    preconditions:
+      - command -v docker
+      - test -e ./local/Dockerfile
+    cmds:
+      - docker build -t {{.IMAGE_NAME}} -f ./local/Dockerfile .
+
+  run:
+    desc: run local container.
+    deps: []
+    silent: false
+    cmds:
+      - task: clean
+      - docker run --privileged --detach --name {{.IMAGE_NAME}}-dind {{.IMAGE_NAME}}
+
+  exec:
+    desc: execute task in local container.
+    deps: [run]
+    silent: false
+    env:
+      TARGET: list
+    preconditions:
+      - command -v docker
+    cmds:
+      - docker exec -it {{.IMAGE_NAME}}-dind /entrypoint.sh docker images
+
+  clean:
+    desc: clean
+    deps: []
+    silent: false
+    cmds:
+      - cmd: docker rm -f {{.IMAGE_NAME}}-dind
+        ignore_error: true
