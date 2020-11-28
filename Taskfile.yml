@@ -30,7 +30,7 @@ tasks:
     cmds:
       - shellcheck --format=checkstyle ./qrcode-wrapper/*.sh > ./test-reports/{{.TASK_NAME}}/checkstyle.xml
       - xmlstarlet tr ./.checkstyle2junit.xslt < ./test-reports/{{.TASK_NAME}}/checkstyle.xml > ./test-reports/{{.TASK_NAME}}/report.xml
-      - readlink -m ./test-reports/{{.TASK_NAME}}/report.xml
+      - readlink -f ./test-reports/{{.TASK_NAME}}/report.xml
       - rm -f ./test-reports/{{.TASK_NAME}}/checkstyle.xml
 
   lint:
@@ -51,7 +51,7 @@ tasks:
     cmds:
       - hadolint --format=checkstyle ./qrcode-wrapper/Dockerfile > ./test-reports/{{.TASK_NAME}}/checkstyle.xml
       - xmlstarlet tr ./.checkstyle2junit.xslt < ./test-reports/{{.TASK_NAME}}/checkstyle.xml > ./test-reports/{{.TASK_NAME}}/report.xml
-      - readlink -m ./test-reports/{{.TASK_NAME}}/report.xml
+      - readlink -f ./test-reports/{{.TASK_NAME}}/report.xml
       - rm -f ./test-reports/{{.TASK_NAME}}/checkstyle.xml
 
   build-image:
@@ -92,7 +92,7 @@ tasks:
           --format=template
           --template="@contrib/junit.tpl"
           -o=./test-reports/{{.TASK_NAME}}/report.xml
-      - readlink -m ./test-reports/{{.TASK_NAME}}/report.xml
+      - readlink -f ./test-reports/{{.TASK_NAME}}/report.xml
 
   test:
     desc: test
@@ -121,7 +121,7 @@ tasks:
           --format=j
           --output=./test-reports/{{.TASK_NAME}}/report.xml
           ./test/spec
-      - readlink -m ./test-reports/{{.TASK_NAME}}/report.xml
+      - readlink -f ./test-reports/{{.TASK_NAME}}/report.xml
 
   publish-image:
     desc: publish image
