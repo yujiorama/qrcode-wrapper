@@ -15,8 +15,13 @@ definitions:
               - 'qrcode-wrapper/**/*.sh'
     - step:
         name: &lint
+        image: hadolint/hadolint:latest-alpine
         script:
-          - echo TODO hadolint
+          - apk update && apk add --no-cache xmlstarlet
+          - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - task lint
+        artifacts:
+          - 'test-reports/**'
         condition:
           changesets:
             includePaths:

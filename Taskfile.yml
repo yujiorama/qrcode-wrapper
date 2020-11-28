@@ -17,7 +17,7 @@ tasks:
     sources:
       - ./qrcode-wrapper/*.sh
     generates:
-      - ./test-reports/{{.TASK_NAME}}/junit.xml
+      - ./test-reports/{{.TASK_NAME}}/report.xml
     preconditions:
       - command -v shellcheck
       - test -e ./.shellcheckrc
@@ -26,5 +26,27 @@ tasks:
       - mkdir -p ./test-reports/{{.TASK_NAME}}
     cmds:
       - shellcheck --format=checkstyle ./qrcode-wrapper/*.sh > ./test-reports/{{.TASK_NAME}}/checkstyle.xml
-      - xmlstarlet tr ./.checkstyle2junit.xslt < ./test-reports/{{.TASK_NAME}}/checkstyle.xml > ./test-reports/{{.TASK_NAME}}/junit.xml
-      - readlink -m ./test-reports/{{.TASK_NAME}}/junit.xml
+      - xmlstarlet tr ./.checkstyle2junit.xslt < ./test-reports/{{.TASK_NAME}}/checkstyle.xml > ./test-reports/{{.TASK_NAME}}/report.xml
+      - readlink -m ./test-reports/{{.TASK_NAME}}/report.xml
+      - rm -f ./test-reports/{{.TASK_NAME}}/checkstyle.xml
+
+  lint:
+    desc: lint
+    deps: []
+    vars:
+      TASK_NAME: lint
+    sources:
+      - ./qrcode-wrapper/Dockerfile
+    generates:
+      - ./test-reports/{{.TASK_NAME}}/report.xml
+    preconditions:
+      - command -v hadolint
+      - test -e ./.hadolint.yaml
+      - command -v xmlstarlet
+      - test -e ./.checkstyle2junit.xslt
+      - mkdir -p ./test-reports/{{.TASK_NAME}}
+    cmds:
+      - hadolint --format=checkstyle ./qrcode-wrapper/Dockerfile > ./test-reports/{{.TASK_NAME}}/checkstyle.xml
+      - xmlstarlet tr ./.checkstyle2junit.xslt < ./test-reports/{{.TASK_NAME}}/checkstyle.xml > ./test-reports/{{.TASK_NAME}}/report.xml
+      - readlink -m ./test-reports/{{.TASK_NAME}}/report.xml
+      - rm -f ./test-reports/{{.TASK_NAME}}/checkstyle.xml
