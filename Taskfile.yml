@@ -1,0 +1,30 @@
+# https://taskfile.dev
+
+version: '3'
+
+tasks:
+  default:
+    desc: list tasks
+    cmds:
+      - task --list
+    silent: true
+
+  syntax-check:
+    desc: syntax check
+    deps: []
+    vars:
+      TASK_NAME: syntax-check
+    sources:
+      - ./qrcode-wrapper/*.sh
+    generates:
+      - ./test-reports/{{.TASK_NAME}}/junit.xml
+    preconditions:
+      - command -v shellcheck
+      - test -e ./.shellcheckrc
+      - command -v xmlstarlet
+      - test -e ./.checkstyle2junit.xslt
+      - mkdir -p ./test-reports/{{.TASK_NAME}}
+    cmds:
+      - shellcheck --format=checkstyle ./qrcode-wrapper/*.sh > ./test-reports/{{.TASK_NAME}}/checkstyle.xml
+      - xmlstarlet tr ./.checkstyle2junit.xslt < ./test-reports/{{.TASK_NAME}}/checkstyle.xml > ./test-reports/{{.TASK_NAME}}/junit.xml
+      - readlink -m ./test-reports/{{.TASK_NAME}}/junit.xml

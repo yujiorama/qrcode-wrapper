@@ -2,12 +2,16 @@ definitions:
   steps:
     - step:
         name: &syntax-check
+        image: atlassian/default-image:2
         script:
-          - echo TODO shellcheck
+          - DEBIAN_FRONTEND=noninteractive apt-get update -y -qq && apt-get install -y -qq shellcheck xmlstarlet
+          - sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - task syntax-check
+        artifacts:
+          - 'test-reports/**'
         condition:
           changesets:
             includePaths:
-              - qrcode-wrapper/Dockerfile
               - 'qrcode-wrapper/**/*.sh'
     - step:
         name: &lint

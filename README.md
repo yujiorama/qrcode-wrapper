@@ -7,6 +7,12 @@ alpine イメージに qrencode と zbar をインストールしたコンテナ
 * [libqrencode](https://github.com/fukuchi/libqrencode)
 * [ZBar bar code reader](http://zbar.sourceforge.net/)
 
+## dev dependencies
+
+* [shellcheck](https://github.com/koalaman/shellcheck#installing)
+* [hadolint](https://github.com/hadolint/hadolint)
+* [dockle](https://github.com/goodwithtech/dockle)
+
 ## usage
 
 ```bash
