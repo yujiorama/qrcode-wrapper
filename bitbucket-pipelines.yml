@@ -17,7 +17,7 @@ definitions:
         name: &lint
         image: hadolint/hadolint:latest-alpine
         script:
-          - apk update && apk add --no-cache xmlstarlet
+          - apk add --no-cache xmlstarlet
           - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
           - task lint
         artifacts:
@@ -28,37 +28,80 @@ definitions:
               - qrcode-wrapper/Dockerfile
     - step:
         name: &build-image
+        image: atlassian/default-image:2
         caches:
           - docker
         script:
-          - echo TODO build docker image
-        service:
+          - DEBIAN_FRONTEND=noninteractive apt-get update -y -qq && apt-get install -y -qq shellcheck xmlstarlet
+          - sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - task build-image
+        services:
           - docker
+        artifacts:
+          - 'test-reports/**'
+        condition:
+          changesets:
+            includePaths:
+              - qrcode-wrapper/Dockerfile
+              - 'qrcode-wrapper/**/*.sh'
     - step:
-        name: &dockle-scan
+        name: &image-scan
+        image: atlassian/default-image:2
         caches:
           - docker
         script:
-          - echo TODO dockle
-        service:
+          - sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - |
+            VERSION=0.13.0
+            wget -O /var/tmp/trivy.tgz https://github.com/aquasecurity/trivy/releases/download/v${VERSION}/trivy_${VERSION}_Linux-64bit.tar.gz
+            tar xzvf /var/tmp/trivy.tgz -C /usr/local/bin && rm -f /var/tmp/trivy.tgz
+          - task scan
+        services:
           - docker
+        artifacts:
+          - 'test-reports/**'
+        condition:
+          changesets:
+            includePaths:
+              - qrcode-wrapper/Dockerfile
+              - 'qrcode-wrapper/**/*.sh'
     - step:
         name: &test
+        image: atlassian/default-image:2
         caches:
           - docker
         script:
-          - echo TODO test
-        service:
+          - sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - sh -c "$(curl -fsSL https://git.io/shellspec)" -- -d /usr/local/shellspec -b /usr/local/bin --yes
+          - task test
+        services:
           - docker
+        artifacts:
+          - 'test-reports/**'
+        condition:
+          changesets:
+            includePaths:
+              - qrcode-wrapper/Dockerfile
+              - 'qrcode-wrapper/**/*.sh'
+              - 'test/**'
     - step:
         name: &publish-image
         deployment: test
+        image: atlassian/default-image:2
         caches:
           - docker
         script:
-          - echo TODO publish-image
-        service:
+          - sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - task publish-image
+        services:
           - docker
+        artifacts:
+          - 'test-reports/**'
+        condition:
+          changesets:
+            includePaths:
+              - qrcode-wrapper/Dockerfile
+              - 'qrcode-wrapper/**/*.sh'
 
 pipelines:
   tags:
@@ -68,7 +111,7 @@ pipelines:
         - step: *lint
       - step: *build-image
       - parallel:
-        - step: *dockle-scan
+        - step: *image-scan
         - step: *test
         - step: *publish-image
   pull-requests:
@@ -77,7 +120,7 @@ pipelines:
         - step: *syntax-check
         - step: *lint
       - parallel:
-        - step: *dockle-scan
+        - step: *image-scan
         - step: *test
 
   custom:

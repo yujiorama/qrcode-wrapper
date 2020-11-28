@@ -11,7 +11,8 @@ alpine イメージに qrencode と zbar をインストールしたコンテナ
 
 * [shellcheck](https://github.com/koalaman/shellcheck#installing)
 * [hadolint](https://github.com/hadolint/hadolint)
-* [dockle](https://github.com/goodwithtech/dockle)
+* [trivy](https://github.com/aquasecurity/trivy)
+* [shellspec](https://shellspec.info/)
 
 ## usage
 

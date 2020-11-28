@@ -2,6 +2,9 @@
 
 version: '3'
 
+vars:
+  IMAGE_NAME_TAG: qrcode-wrapper
+
 tasks:
   default:
     desc: list tasks
@@ -50,3 +53,94 @@ tasks:
       - xmlstarlet tr ./.checkstyle2junit.xslt < ./test-reports/{{.TASK_NAME}}/checkstyle.xml > ./test-reports/{{.TASK_NAME}}/report.xml
       - readlink -m ./test-reports/{{.TASK_NAME}}/report.xml
       - rm -f ./test-reports/{{.TASK_NAME}}/checkstyle.xml
+
+  build-image:
+    desc: build image
+    deps: [sytax-check, lint]
+    vars:
+      TASK_NAME: build-image
+    sources:
+      - ./qrcode-wrapper/Dockerfile
+      - ./qrcode-wrapper/*.sh
+    generates:
+      - ./test-reports/qrcode-wrapper.tar
+    preconditions:
+      - command -v docker
+      - mkdir -p ./test-reports
+    cmds:
+      - docker build -f ./qrcode-wrapper/Dockerfile -t {{.IMAGE_NAME_TAG}} ./qrcode-wrapper
+      - docker save {{.IMAGE_NAME_TAG}} -o ./test-reports/qrcode-wrapper.tar
+
+  image-scan:
+    desc: image scan
+    deps: [build-image]
+    vars:
+      TASK_NAME: image-scan
+    sources:
+      - ./test-reports/qrcode-wrapper.tar
+    generates:
+      - ./test-reports/{{.TASK_NAME}}/report.xml
+    preconditions:
+      - command -v trivy
+      - test -e ./test-reports/qrcode-wrapper.tar
+      - mkdir -p ./test-reports/{{.TASK_NAME}}
+    cmds:
+      - >
+        trivy image
+          --exit-code 0
+          --input=./test-reports/qrcode-wrapper.tar
+          --format=template
+          --template="@contrib/junit.tpl"
+          -o=./test-reports/{{.TASK_NAME}}/report.xml
+      - readlink -m ./test-reports/{{.TASK_NAME}}/report.xml
+
+  test:
+    desc: test
+    deps: [build-image]
+    vars:
+      TASK_NAME: test
+    sources:
+      - ./test-reports/qrcode-wrapper.tar
+      - './test/.shellspec'
+      - './test/spec/**'
+      - './test/lib/**'
+    generates:
+      - ./test-reports/{{.TASK_NAME}}/report.xml
+    preconditions:
+      - command -v docker
+      - command -v shellspec
+      - mkdir -p ./test-reports/{{.TASK_NAME}}
+    cmds:
+      - docker load --input=./test-reports/qrcode-wrapper.tar
+      - >
+        shellspec
+          --shell=auto
+          --no-banner
+          --no-color
+          --env IMAGE_NAME_TAG={{.IMAGE_NAME_TAG}}
+          --format=j
+          --output=./test-reports/{{.TASK_NAME}}/report.xml
+          ./test/spec
+      - readlink -m ./test-reports/{{.TASK_NAME}}/report.xml
+
+  publish-image:
+    desc: publish image
+    deps: [image-scan]
+    vars:
+      TASK_NAME: publish-image
+      DOCKER_USERNAME: dockerhub username
+      DOCKER_PASSWORD: dockerhub password
+      BITBUCKET_BRANCH: branch name
+      BITBUCKET_COMMIT: commit hash
+    sources:
+      - ./test-reports/qrcode-wrapper.tar
+    preconditions:
+      - command -v docker
+    cmds:
+      - docker load --input=./test-reports/qrcode-wrapper.tar
+      - >
+        docker tag
+          {{.IMAGE_NAME_TAG}}:latest
+          docker.io/{{.DOCKER_USERNAME}}/{{.IMAGE_NAME_TAG}:{{.BITBUCKET_BRANCH}}-{{.BITBUCKET_COMMIT}}
+      - docker login --username {{.DOCKER_USERNAME}} --password {{.DOCKER_PASSWORD}}
+      - docker push docker.io/{{.DOCKER_USERNAME}}/{{.IMAGE_NAME_TAG}:{{.BITBUCKET_BRANCH}}-{{.BITBUCKET_COMMIT}}
