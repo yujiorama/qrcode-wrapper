@@ -6,27 +6,24 @@ tasks:
   build:
     desc: build local image.
     deps: []
-    silent: false
     sources:
-      - './**'
+      - './**/*'
     preconditions:
       - command -v docker
       - test -e ./local/Dockerfile
     cmds:
-      - docker build -t {{.IMAGE_NAME}} -f ./local/Dockerfile .
+      - docker build -t {{.IMAGE_NAME}}-dind -f ./local/Dockerfile .
 
   run:
     desc: run local container.
     deps: [clean, build]
-    silent: false
     cmds:
-      - docker run --privileged --detach --name {{.IMAGE_NAME}}-dind {{.IMAGE_NAME}}
+      - docker run --privileged --detach --name {{.IMAGE_NAME}}-dind {{.IMAGE_NAME}}-dind
       - sleep 5
 
   exec:
     desc: execute task in local container.
     deps: [run]
-    silent: false
     env:
       TARGET: list
     preconditions:
@@ -37,7 +34,6 @@ tasks:
   clean:
     desc: clean
     deps: []
-    silent: false
     cmds:
       - cmd: docker rm -f {{.IMAGE_NAME}}-dind
         ignore_error: true

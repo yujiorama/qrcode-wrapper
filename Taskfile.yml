@@ -5,8 +5,6 @@ version: '3'
 includes:
   local: ./local
 
-silent: true
-
 vars:
   IMAGE_NAME: qrcode-wrapper
 
@@ -105,8 +103,8 @@ tasks:
     deps: [build-image]
     sources:
       - './test/.shellspec'
-      - './test/spec/**'
-      - './test/lib/**'
+      - './test/spec/**/*'
+      - './test/lib/**/*'
     generates:
       - ./test-reports/{{.TASK}}/report.xml
     preconditions:
