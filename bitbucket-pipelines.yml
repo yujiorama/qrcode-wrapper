@@ -5,7 +5,7 @@ definitions:
         image: atlassian/default-image:2
         script:
           - DEBIAN_FRONTEND=noninteractive apt-get update -y -qq && apt-get install -y -qq shellcheck xmlstarlet
-          - sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
           - task syntax-check
         artifacts:
           - 'test-reports/**'
@@ -33,7 +33,7 @@ definitions:
           - docker
         script:
           - DEBIAN_FRONTEND=noninteractive apt-get update -y -qq && apt-get install -y -qq shellcheck xmlstarlet
-          - sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
           - task build-image
         services:
           - docker
@@ -45,15 +45,15 @@ definitions:
               - qrcode-wrapper/Dockerfile
               - 'qrcode-wrapper/**/*.sh'
     - step:
-        name: &image-scan
+        name: &scan-image
         image: atlassian/default-image:2
         caches:
           - docker
         script:
-          - sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
           - |
-            VERSION=0.13.0
-            wget -O /var/tmp/trivy.tgz https://github.com/aquasecurity/trivy/releases/download/v${VERSION}/trivy_${VERSION}_Linux-64bit.tar.gz
+            TRIVY=0.13.0
+            wget -O - -o /var/tmp/trivy.tgz https://github.com/aquasecurity/trivy/releases/download/v${TRIVY}/trivy_${TRIVY}_Linux-64bit.tar.gz
             tar xzvf /var/tmp/trivy.tgz -C /usr/local/bin && rm -f /var/tmp/trivy.tgz
           - task scan
         services:
@@ -71,8 +71,8 @@ definitions:
         caches:
           - docker
         script:
-          - sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
-          - sh -c "$(curl -fsSL https://git.io/shellspec)" -- -d /usr/local/shellspec -b /usr/local/bin --yes
+          - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - sh -c "$(wget -O - https://git.io/shellspec)" -- -d /usr/local/shellspec -b /usr/local/bin --yes
           - docker load --input=./test-reports/qrcode-wrapper.tar
           - task test
         services:
@@ -92,7 +92,7 @@ definitions:
         caches:
           - docker
         script:
-          - sh -c "$(curl -ssL https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
           - docker load --input=./test-reports/qrcode-wrapper.tar
           - task publish-image
         services:
@@ -113,7 +113,7 @@ pipelines:
         - step: *lint
       - step: *build-image
       - parallel:
-        - step: *image-scan
+        - step: *scan-image
         - step: *test
         - step: *publish-image
   pull-requests:
@@ -122,7 +122,7 @@ pipelines:
         - step: *syntax-check
         - step: *lint
       - parallel:
-        - step: *image-scan
+        - step: *scan-image
         - step: *test
 
   custom:

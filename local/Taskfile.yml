@@ -17,11 +17,11 @@ tasks:
 
   run:
     desc: run local container.
-    deps: []
+    deps: [clean, build]
     silent: false
     cmds:
-      - task: clean
       - docker run --privileged --detach --name {{.IMAGE_NAME}}-dind {{.IMAGE_NAME}}
+      - sleep 5
 
   exec:
     desc: execute task in local container.
@@ -32,7 +32,7 @@ tasks:
     preconditions:
       - command -v docker
     cmds:
-      - docker exec -it {{.IMAGE_NAME}}-dind /entrypoint.sh docker images
+      - docker exec -it {{.IMAGE_NAME}}-dind task {{.TARGET}}
 
   clean:
     desc: clean

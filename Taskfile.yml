@@ -77,7 +77,7 @@ tasks:
       - docker save {{.IMAGE_NAME}} -o ./test-reports/{{.IMAGE_NAME}}.tar
       - readlink -f ./test-reports/{{.IMAGE_NAME}}.tar
 
-  image-scan:
+  scan-image:
     desc: image scan
     deps: [build-image]
     sources:
@@ -86,16 +86,17 @@ tasks:
       - ./test-reports/{{.TASK}}/report.xml
     preconditions:
       - command -v trivy
+      - test -e /usr/local/bin/contrib/junit.tpl
       - test -e ./test-reports/{{.IMAGE_NAME}}.tar
       - mkdir -p ./test-reports/{{.TASK}}
     cmds:
       - >
         trivy image
-          --exit-code 0
-          --input=./test-reports/{{.IMAGE_NAME}}.tar
-          --format=template
-          --template="@contrib/junit.tpl"
-          -o=./test-reports/{{.TASK}}/report.xml
+        --exit-code 0
+        --input=./test-reports/{{.IMAGE_NAME}}.tar
+        --format=template
+        --template="@/usr/local/bin/contrib/junit.tpl"
+        -o=./test-reports/{{.TASK}}/report.xml
       - readlink -f ./test-reports/{{.TASK}}/report.xml
       - cat ./test-reports/{{.TASK}}/report.xml
 
@@ -115,19 +116,19 @@ tasks:
     cmds:
       - >
         shellspec
-          --shell=auto
-          --no-banner
-          --no-color
-          --env IMAGE_NAME={{.IMAGE_NAME}}
-          --format=j
-          --output=./test-reports/{{.TASK}}/report.xml
-          ./test/spec
+        --shell auto
+        --no-banner
+        --no-color
+        --env IMAGE_NAME={{.IMAGE_NAME}}
+        --format j
+        ./test/spec
+        > ./test-reports/{{.TASK}}/report.xml
       - readlink -f ./test-reports/{{.TASK}}/report.xml
       - cat ./test-reports/{{.TASK}}/report.xml
 
   publish-image:
     desc: publish image
-    deps: [image-scan]
+    deps: [scan-image]
     env:
       DOCKER_USERNAME: dockerhub username
       DOCKER_PASSWORD: dockerhub password
