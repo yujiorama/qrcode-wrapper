@@ -33,7 +33,8 @@ tasks:
       - test -e ./.checkstyle2junit.xslt
       - mkdir -p ./test-reports/{{.TASK}}
     cmds:
-      - shellcheck --format=checkstyle ./qrcode-wrapper/*.sh > ./test-reports/{{.TASK}}/checkstyle.xml
+      - cmd: shellcheck --format=checkstyle ./qrcode-wrapper/*.sh > ./test-reports/{{.TASK}}/checkstyle.xml
+        ignore_error: true
       - xmlstarlet tr ./.checkstyle2junit.xslt < ./test-reports/{{.TASK}}/checkstyle.xml > ./test-reports/{{.TASK}}/report.xml
       - rm -f ./test-reports/{{.TASK}}/checkstyle.xml
       - readlink -f ./test-reports/{{.TASK}}/report.xml
@@ -53,7 +54,8 @@ tasks:
       - test -e ./.checkstyle2junit.xslt
       - mkdir -p ./test-reports/{{.TASK}}
     cmds:
-      - hadolint --format=checkstyle ./qrcode-wrapper/Dockerfile > ./test-reports/{{.TASK}}/checkstyle.xml
+      - cmd: hadolint --format=checkstyle ./qrcode-wrapper/Dockerfile > ./test-reports/{{.TASK}}/checkstyle.xml
+        ignore_error: true
       - xmlstarlet tr ./.checkstyle2junit.xslt < ./test-reports/{{.TASK}}/checkstyle.xml > ./test-reports/{{.TASK}}/report.xml
       - rm -f ./test-reports/{{.TASK}}/checkstyle.xml
       - readlink -f ./test-reports/{{.TASK}}/report.xml
@@ -88,13 +90,14 @@ tasks:
       - test -e ./test-reports/{{.IMAGE_NAME}}.tar
       - mkdir -p ./test-reports/{{.TASK}}
     cmds:
-      - >
-        trivy image
-        --exit-code 0
-        --input=./test-reports/{{.IMAGE_NAME}}.tar
-        --format=template
-        --template="@/usr/local/bin/contrib/junit.tpl"
-        -o=./test-reports/{{.TASK}}/report.xml
+      - cmd: >
+          trivy image
+          --exit-code 0
+          --input=./test-reports/{{.IMAGE_NAME}}.tar
+          --format=template
+          --template="@/usr/local/bin/contrib/junit.tpl"
+          -o=./test-reports/{{.TASK}}/report.xml
+        ignore_error: true
       - readlink -f ./test-reports/{{.TASK}}/report.xml
       - cat ./test-reports/{{.TASK}}/report.xml
 
@@ -112,15 +115,16 @@ tasks:
       - command -v shellspec
       - mkdir -p ./test-reports/{{.TASK}}
     cmds:
-      - >
-        shellspec
-        --shell auto
-        --no-banner
-        --no-color
-        --env IMAGE_NAME={{.IMAGE_NAME}}
-        --format j
-        ./test/spec
-        > ./test-reports/{{.TASK}}/report.xml
+      - cmd: >
+          shellspec
+          --shell auto
+          --no-banner
+          --no-color
+          --env IMAGE_NAME={{.IMAGE_NAME}}
+          --format j
+          ./test/spec
+          > ./test-reports/{{.TASK}}/report.xml
+        ignore_error: true
       - readlink -f ./test-reports/{{.TASK}}/report.xml
       - cat ./test-reports/{{.TASK}}/report.xml
 
