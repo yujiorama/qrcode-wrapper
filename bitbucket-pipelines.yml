@@ -31,79 +31,102 @@ definitions:
             includePaths:
               - ./.checkstyle2junit.xslt
               - ./qrcode-wrapper/Dockerfile
+    - step: &build-image
+        name: build-image
+        image: atlassian/default-image:2
+        caches:
+          - docker
+        script:
+          - |
+            DEBIAN_FRONTEND=noninteractive
+            apt-get update -y -qq
+            apt-get install -y -qq shellcheck xmlstarlet
+          - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - task build-image
+        services:
+          - docker
+        artifacts:
+          - 'test-reports/**'
+        condition:
+          changesets:
+            includePaths:
+              - ./.dockerignore
+              - ./qrcode-wrapper/**
+    - step: &scan-image
+        name: scan-image
+        image: atlassian/default-image:2
+        caches:
+          - docker
+        script:
+          - |
+            TRIVY=0.14.0
+            wget -O /var/tmp/trivy.tgz https://github.com/aquasecurity/trivy/releases/download/v${TRIVY}/trivy_${TRIVY}_Linux-64bit.tar.gz
+          - tar -xzf /var/tmp/trivy.tgz -C /usr/local/bin
+          - rm -f /var/tmp/trivy.tgz
+          - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - task scan-image
+        services:
+          - docker
+        artifacts:
+          - 'test-reports/**'
+        condition:
+          changesets:
+            includePaths:
+              - ./.dockerignore
+              - ./.trivyignore
+              - ./qrcode-wrapper/**
+    - step: &test
+        name: test
+        image: atlassian/default-image:2
+        caches:
+          - docker
+        script:
+          - sh -c "$(wget -O - https://git.io/shellspec)" -- -d /usr/local/shellspec -b /usr/local/bin --yes
+          - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - docker load --input=./test-reports/qrcode-wrapper.tar
+          - task test
+        services:
+          - docker
+        artifacts:
+          - 'test-reports/**'
+        condition:
+          changesets:
+            includePaths:
+              - ./.dockerignore
+              - ./qrcode-wrapper/**
+              - ./test/**
+    - step: &publish-image
+        name: publish-image
+        deployment: test
+        image: atlassian/default-image:2
+        caches:
+          - docker
+        script:
+          - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - docker load --input=./test-reports/qrcode-wrapper.tar
+          - task publish-image
+        services:
+          - docker
+        artifacts:
+          - 'test-reports/**'
 
 pipelines:
   tags:
     '**':
       - step: *syntax-check
       - step: *lint
+      - step: *build-image
+      - step: *scan-image
+      - step: *test
+      - step: *publish-image
 
   pull-requests:
     '**':
       - step: *syntax-check
       - step: *lint
-      - step:
-          name: build-image
-          image: atlassian/default-image:2
-          caches:
-            - docker
-          script:
-            - |
-              DEBIAN_FRONTEND=noninteractive
-              apt-get update -y -qq
-              apt-get install -y -qq shellcheck xmlstarlet
-            - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
-            - task build-image
-          services:
-            - docker
-          artifacts:
-            - 'test-reports/**'
-      - step:
-          name: scan-image
-          image: atlassian/default-image:2
-          caches:
-            - docker
-          script:
-            - |
-              TRIVY=0.14.0
-              wget -O /var/tmp/trivy.tgz https://github.com/aquasecurity/trivy/releases/download/v${TRIVY}/trivy_${TRIVY}_Linux-64bit.tar.gz
-            - tar -xzf /var/tmp/trivy.tgz -C /usr/local/bin
-            - rm -f /var/tmp/trivy.tgz
-            - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
-            - task scan-image
-          services:
-            - docker
-          artifacts:
-            - 'test-reports/**'
-      - step:
-          name: test
-          image: atlassian/default-image:2
-          caches:
-            - docker
-          script:
-            - sh -c "$(wget -O - https://git.io/shellspec)" -- -d /usr/local/shellspec -b /usr/local/bin --yes
-            - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
-            - docker load --input=./test-reports/qrcode-wrapper.tar
-            - task test
-          services:
-            - docker
-          artifacts:
-            - 'test-reports/**'
-
-  #      - step:
-  #          name: publish-image
-  #          deployment: test
-  #          image: atlassian/default-image:2
-  #          caches:
-  #            - docker
-  #          script:
-  #            - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
-  #            - docker load --input=./test-reports/qrcode-wrapper.tar
-  #            - task publish-image
-  #          services:
-  #            - docker
-  #          artifacts:
-  #            - 'test-reports/**'
+      - step: *build-image
+      - step: *scan-image
+      - step: *test
 
   custom:
     renovate:
