@@ -64,32 +64,51 @@ tasks:
   build-image:
     desc: build image
     deps: []
+    vars:
+      BUILD_DATE:
+        sh: date --rfc-3339=seconds
+      VCS_REF:
+        sh: git log -n 1 --format=%h
+      BITBUCKET_TAG: v0.0.1
     sources:
       - ./qrcode-wrapper/Dockerfile
       - ./qrcode-wrapper/*.sh
     generates:
-      - ./test-reports/{{.IMAGE_NAME}}.tar
+      - ./test-reports/{{.IMAGE_NAME}}.tar.xz
     preconditions:
       - command -v docker
       - mkdir -p ./test-reports
     cmds:
-      - docker build -f ./qrcode-wrapper/Dockerfile -t {{.IMAGE_NAME}} ./qrcode-wrapper
-      - docker save {{.IMAGE_NAME}} -o ./test-reports/{{.IMAGE_NAME}}.tar
-      - readlink -f ./test-reports/{{.IMAGE_NAME}}.tar
+      - >
+        docker build
+        -f ./qrcode-wrapper/Dockerfile
+        -t {{.IMAGE_NAME}}
+        --build-arg build_date="{{.BUILD_DATE}}"
+        --build-arg name="yujiorama/{{.IMAGE_NAME}}"
+        --build-arg description="encode/decode QR code image"
+        --build-arg usage="https://bitbucket.org/yujiorama/qrcode-wrapper/src/main/README.md"
+        --build-arg url="https://bitbucket.org/yujiorama/qrcode-wrapper.git"
+        --build-arg vcs_url="git@bitbucket.org:yujiorama/qrcode-wrapper.git"
+        --build-arg vcs_ref="{{.VCS_REF}}"
+        --build-arg version="{{.BITBUCKET_TAG}}"
+        ./qrcode-wrapper
+      - docker save {{.IMAGE_NAME}} | xz -c > ./test-reports/{{.IMAGE_NAME}}.tar.xz
+      - readlink -f ./test-reports/{{.IMAGE_NAME}}.tar.xz
 
   scan-image:
     desc: image scan
     deps: [build-image]
     sources:
-      - ./test-reports/{{.IMAGE_NAME}}.tar
+      - ./test-reports/{{.IMAGE_NAME}}.tar.xz
     generates:
       - ./test-reports/{{.TASK}}/report.xml
     preconditions:
       - command -v trivy
       - test -e /usr/local/bin/contrib/junit.tpl
-      - test -e ./test-reports/{{.IMAGE_NAME}}.tar
+      - test -e ./test-reports/{{.IMAGE_NAME}}.tar.xz
       - mkdir -p ./test-reports/{{.TASK}}
     cmds:
+      - xz -dc ./test-reports/{{.IMAGE_NAME}}.tar.xz > ./test-reports/{{.IMAGE_NAME}}.tar
       - cmd: >
           trivy image
           --exit-code 0
@@ -100,6 +119,7 @@ tasks:
           --severity=MEDIUM,HIGH,CRITICAL
           --ignorefile=./.trivyignore
         ignore_error: true
+      - rm -f ./test-reports/{{.IMAGE_NAME}}.tar
       - readlink -f ./test-reports/{{.TASK}}/report.xml
       - cat ./test-reports/{{.TASK}}/report.xml
 
@@ -115,8 +135,10 @@ tasks:
     preconditions:
       - command -v docker
       - command -v shellspec
+      - test -e ./test-reports/{{.IMAGE_NAME}}.tar.xz
       - mkdir -p ./test-reports/{{.TASK}}
     cmds:
+      - xz -dc ./test-reports/{{.IMAGE_NAME}}.tar.xz | docker load
       - cmd: >
           shellspec
           --shell auto
@@ -132,24 +154,22 @@ tasks:
 
   publish-image:
     desc: publish image
-    deps: [scan-image]
-    env:
+    deps: [build-image]
+    vars:
       DOCKER_USERNAME: dockerhub username
       DOCKER_PASSWORD: dockerhub password
-      BITBUCKET_BRANCH: branch name
-      BITBUCKET_COMMIT: commit hash
+      BITBUCKET_TAG: v0.0.1
     generates:
       - ./test-reports/{{.TASK}}/result.txt
     preconditions:
       - command -v docker
+      - test -e ./test-reports/{{.IMAGE_NAME}}.tar.xz
       - mkdir -p ./test-reports/{{.TASK}}
     cmds:
-      - >
-        docker tag
-          {{.IMAGE_NAME}}:latest
-          docker.io/{{.DOCKER_USERNAME}}/{{.IMAGE_NAME}:{{.BITBUCKET_BRANCH}}-{{.BITBUCKET_COMMIT}}
-      - docker login --username {{.DOCKER_USERNAME}} --password {{.DOCKER_PASSWORD}}
-      - docker push docker.io/{{.DOCKER_USERNAME}}/{{.IMAGE_NAME}:{{.BITBUCKET_BRANCH}}-{{.BITBUCKET_COMMIT}} > ./test-reports/{{.TASK}}/result.txt
+      - echo docker login --username {{.DOCKER_USERNAME}} --password {{.DOCKER_PASSWORD}}
+      - echo xz -dc ./test-reports/{{.IMAGE_NAME}}.tar.xz | docker load
+      - echo docker tag {{.IMAGE_NAME}}:latest docker.io/{{.DOCKER_USERNAME}}/{{.IMAGE_NAME}:{{.BITBUCKET_TAG}}
+      - echo docker push docker.io/{{.DOCKER_USERNAME}}/{{.IMAGE_NAME}:{{.BITBUCKET_TAG}} > ./test-reports/{{.TASK}}/result.txt
 
   clean:
     desc: clean
