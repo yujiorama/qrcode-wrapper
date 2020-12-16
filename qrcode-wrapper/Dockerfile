@@ -7,6 +7,8 @@ RUN set -x \
     apt-get install -qq -y --no-install-recommends \
                     qrencode=4.0.2-1 \
                     zbar-tools=0.22-1 \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/* \
  && useradd -d / -s /sbin/nologin -g users -M -u 1001 user
 
 COPY ./docker-entrypoint.sh /
