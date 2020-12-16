@@ -12,24 +12,36 @@ definitions:
           - task syntax-check
         artifacts:
           - 'test-reports/**'
+        condition:
+          changesets:
+            includePaths:
+              - ./.shellcheckrc
+              - ./qrcode-wrapper/*.sh
+    - step: &lint
+        name: lint
+        image: hadolint/hadolint:latest-alpine
+        script:
+          - apk add --no-cache xmlstarlet
+          - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - task lint
+        artifacts:
+          - 'test-reports/**'
+        condition:
+          changesets:
+            includePaths:
+              - ./.checkstyle2junit.xslt
+              - ./qrcode-wrapper/Dockerfile
 
 pipelines:
   tags:
     '**':
       - step: *syntax-check
+      - step: *lint
 
   pull-requests:
     '**':
       - step: *syntax-check
-      - step:
-          name: lint
-          image: hadolint/hadolint:latest-alpine
-          script:
-            - apk add --no-cache xmlstarlet
-            - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
-            - task lint
-          artifacts:
-            - 'test-reports/**'
+      - step: *lint
       - step:
           name: build-image
           image: atlassian/default-image:2
@@ -77,6 +89,7 @@ pipelines:
             - docker
           artifacts:
             - 'test-reports/**'
+
   #      - step:
   #          name: publish-image
   #          deployment: test
