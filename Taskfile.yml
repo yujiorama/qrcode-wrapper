@@ -155,9 +155,9 @@ tasks:
   publish-image:
     desc: publish image
     deps: [build-image]
-    vars:
-      DOCKER_USERNAME: dockerhub username
-      DOCKER_PASSWORD: dockerhub password
+    env:
+      DOCKER_USERNAME: username
+      DOCKER_PASSWORD: password
       BITBUCKET_TAG: v0.0.1
     generates:
       - ./test-reports/{{.TASK}}/result.txt
