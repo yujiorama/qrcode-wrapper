@@ -1,18 +1,26 @@
+definitions:
+  steps:
+    - step: &syntax-check
+        name: syntax-check
+        image: atlassian/default-image:2
+        script:
+          - |
+            DEBIAN_FRONTEND=noninteractive
+            apt-get update -y -qq
+            apt-get install -y -qq shellcheck xmlstarlet
+          - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
+          - task syntax-check
+        artifacts:
+          - 'test-reports/**'
+
 pipelines:
+  tags:
+    '**':
+      - step: *syntax-check
+
   pull-requests:
     '**':
-      - step:
-          name: syntax-check
-          image: atlassian/default-image:2
-          script:
-            - |
-              DEBIAN_FRONTEND=noninteractive
-              apt-get update -y -qq
-              apt-get install -y -qq shellcheck xmlstarlet
-            - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
-            - task syntax-check
-          artifacts:
-            - 'test-reports/**'
+      - step: *syntax-check
       - step:
           name: lint
           image: hadolint/hadolint:latest-alpine
