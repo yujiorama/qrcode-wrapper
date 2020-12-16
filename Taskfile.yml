@@ -96,7 +96,9 @@ tasks:
           --input=./test-reports/{{.IMAGE_NAME}}.tar
           --format=template
           --template="@/usr/local/bin/contrib/junit.tpl"
-          -o=./test-reports/{{.TASK}}/report.xml
+          --output=./test-reports/{{.TASK}}/report.xml
+          --severity=MEDIUM,HIGH,CRITICAL
+          --ignorefile=./.trivyignore
         ignore_error: true
       - readlink -f ./test-reports/{{.TASK}}/report.xml
       - cat ./test-reports/{{.TASK}}/report.xml
