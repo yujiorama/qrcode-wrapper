@@ -12,11 +12,6 @@ definitions:
           - task syntax-check
         artifacts:
           - 'test-reports/**'
-        condition:
-          changesets:
-            includePaths:
-              - ./.shellcheckrc
-              - ./qrcode-wrapper/*.sh
     - step: &lint
         name: lint
         image: hadolint/hadolint:latest-alpine
@@ -26,11 +21,6 @@ definitions:
           - task lint
         artifacts:
           - 'test-reports/**'
-        condition:
-          changesets:
-            includePaths:
-              - ./.checkstyle2junit.xslt
-              - ./qrcode-wrapper/Dockerfile
     - step: &build-image
         name: build-image
         image: atlassian/default-image:2
@@ -47,11 +37,6 @@ definitions:
           - docker
         artifacts:
           - 'test-reports/**'
-        condition:
-          changesets:
-            includePaths:
-              - ./.dockerignore
-              - ./qrcode-wrapper/**
     - step: &scan-image
         name: scan-image
         image: atlassian/default-image:2
@@ -69,12 +54,6 @@ definitions:
           - docker
         artifacts:
           - 'test-reports/**'
-        condition:
-          changesets:
-            includePaths:
-              - ./.dockerignore
-              - ./.trivyignore
-              - ./qrcode-wrapper/**
     - step: &test
         name: test
         image: atlassian/default-image:2
@@ -89,12 +68,6 @@ definitions:
           - docker
         artifacts:
           - 'test-reports/**'
-        condition:
-          changesets:
-            includePaths:
-              - ./.dockerignore
-              - ./qrcode-wrapper/**
-              - ./test/**
     - step: &publish-image
         name: publish-image
         deployment: test
