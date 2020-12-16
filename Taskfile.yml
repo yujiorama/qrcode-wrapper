@@ -166,7 +166,7 @@ tasks:
       - test -e ./test-reports/{{.IMAGE_NAME}}.tar.xz
       - mkdir -p ./test-reports/{{.TASK}}
     cmds:
-      - echo {{.DOCKER_PASSWORD}} | docker login --username {{.DOCKER_USERNAME}} --password-stdin
+      - echo '{{.DOCKER_PASSWORD}}' | docker login --username {{.DOCKER_USERNAME}} --password-stdin
       - xz -dc ./test-reports/{{.IMAGE_NAME}}.tar.xz | docker load
       - docker tag {{.IMAGE_NAME}}:latest docker.io/{{.DOCKER_USERNAME}}/{{.IMAGE_NAME}}:{{.BITBUCKET_TAG}}
       - docker push docker.io/{{.DOCKER_USERNAME}}/{{.IMAGE_NAME}}:{{.BITBUCKET_TAG}} > ./test-reports/{{.TASK}}/result.txt
