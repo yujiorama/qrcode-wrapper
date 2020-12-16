@@ -45,7 +45,7 @@ pipelines:
             - docker
           script:
             - |
-              TRIVY=0.13.0
+              TRIVY=0.14.0
               wget -O /var/tmp/trivy.tgz https://github.com/aquasecurity/trivy/releases/download/v${TRIVY}/trivy_${TRIVY}_Linux-64bit.tar.gz
             - tar -xzf /var/tmp/trivy.tgz -C /usr/local/bin
             - rm -f /var/tmp/trivy.tgz
