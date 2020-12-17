@@ -1,6 +1,6 @@
 # qrcode-wrapper
 
-alpine イメージに qrencode と zbar をインストールしたコンテナイメージ。
+qrencode と zbar をインストールしたコンテナイメージ。
 
 ## dependency
 
@@ -17,9 +17,10 @@ alpine イメージに qrencode と zbar をインストールしたコンテナ
 ## usage
 
 ```bash
-$ docker container run --rm -i yujiorama/qrcode-wrapper encode > google-qr.png <<< https://www.google.com
-ls -l google-qr.png
-$ docker container run --rm -i yujiorama/qrcode-wrapper decode < google-qr.png
+$ docker run --rm -i yujiorama/qrcode-wrapper encode > google-qr.png <<< https://www.google.com
+$ ls -l google-qr.png
+-rw-r--r-- 1 user 1049089 348 12月 17 16:18 google-qr.png
+$ docker run --rm -i yujiorama/qrcode-wrapper decode < google-qr.png
 https://www.google.com
 ```
 
