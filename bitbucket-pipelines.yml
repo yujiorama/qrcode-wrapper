@@ -60,7 +60,7 @@ definitions:
         caches:
           - docker
         script:
-          - sh -c "$(wget -O - https://git.io/shellspec)" -- -d /usr/local/shellspec -b /usr/local/bin --yes
+          - sh -c "$(wget -O - https://git.io/shellspec)" -- -b /usr/local/bin --yes
           - sh -c "$(wget -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin
           - xz -dc ./test-reports/qrcode-wrapper.tar.xz | docker load
           - task test

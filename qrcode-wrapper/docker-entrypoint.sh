@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -eu
 
 encode() {
     exec qrencode -t PNG "$@" -o -

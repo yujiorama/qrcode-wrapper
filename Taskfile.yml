@@ -2,9 +2,6 @@
 
 version: '3'
 
-includes:
-  local: ./local
-
 vars:
   IMAGE_NAME: qrcode-wrapper
 
@@ -64,12 +61,14 @@ tasks:
   build-image:
     desc: build image
     deps: []
-    vars:
+    env:
       BUILD_DATE:
         sh: date --rfc-3339=seconds
-      VCS_REF:
+      BITBUCKET_COMMIT:
         sh: git log -n 1 --format=%h
       BITBUCKET_TAG: v0.0.1
+      BITBUCKET_GIT_HTTP_ORIGIN: BITBUCKET_GIT_HTTP_ORIGIN
+      BITBUCKET_GIT_SSH_ORIGIN: BITBUCKET_GIT_SSH_ORIGIN
     sources:
       - ./qrcode-wrapper/Dockerfile
       - ./qrcode-wrapper/*.sh
@@ -86,10 +85,10 @@ tasks:
         --build-arg build_date="{{.BUILD_DATE}}"
         --build-arg name="yujiorama/{{.IMAGE_NAME}}"
         --build-arg description="encode/decode QR code image"
-        --build-arg usage="https://bitbucket.org/yujiorama/qrcode-wrapper/src/main/README.md"
-        --build-arg url="https://bitbucket.org/yujiorama/qrcode-wrapper.git"
-        --build-arg vcs_url="git@bitbucket.org:yujiorama/qrcode-wrapper.git"
-        --build-arg vcs_ref="{{.VCS_REF}}"
+        --build-arg usage="{{.BITBUCKET_GIT_HTTP_ORIGIN}}/src/main/README.md"
+        --build-arg url="{{.BITBUCKET_GIT_HTTP_ORIGIN}}"
+        --build-arg vcs_url="{{.BITBUCKET_GIT_SSH_ORIGIN}}"
+        --build-arg vcs_ref="{{.BITBUCKET_COMMIT}}"
         --build-arg version="{{.BITBUCKET_TAG}}"
         ./qrcode-wrapper
       - docker save {{.IMAGE_NAME}} | xz -c > ./test-reports/{{.IMAGE_NAME}}.tar.xz
@@ -97,7 +96,7 @@ tasks:
 
   scan-image:
     desc: image scan
-    deps: [build-image]
+    deps: []
     sources:
       - ./test-reports/{{.IMAGE_NAME}}.tar.xz
     generates:
@@ -125,7 +124,7 @@ tasks:
 
   test:
     desc: test
-    deps: [build-image]
+    deps: []
     sources:
       - './test/.shellspec'
       - './test/spec/**/*'
@@ -154,7 +153,7 @@ tasks:
 
   publish-image:
     desc: publish image
-    deps: [build-image]
+    deps: []
     env:
       DOCKER_USERNAME: username
       DOCKER_PASSWORD: password
