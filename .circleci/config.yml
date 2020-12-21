@@ -1,14 +1,39 @@
 version: 2.1
+
 jobs:
-  build:
+  syntax-check:
     docker:
-      - image: alpine:3.7
-        auth:
-          username: mydockerhub-user
-          password: $DOCKERHUB_PASSWORD  # context / project UI env-var reference
+      - image: circleci/golang:1.15
     steps:
       - run:
-          name: The First Step
+          name: install taskfile
+          command: >
+            curl -fsSL --output - https://taskfile.dev/install.sh | sh -s -- -d -b ${HOME}/bin
+      - run:
+          name: install shellcheck
           command: |
-            echo 'Hello World!'
-            echo 'This is the delivery pipeline'
+            curl -fsSL --output /var/tmp/shellcheck-stable.txz "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.$(uname -s | tr A-Z a-z).$(uname -m).tar.xz"
+            tar -xJvpf /var/tmp/shellcheck-stable.txz -C ${HOME}
+            chmod 755 ${HOME}/shellcheck-stable/shellcheck
+            ln -s ${HOME}/shellcheck-stable/shellcheck ${HOME}/bin/shellcheck
+      - run:
+          name: install reviewdog
+          command: >
+            curl -fsSL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b ${HOME}/bin
+      - checkout
+      - run:
+          name: shellcheck
+          command: >
+            shellcheck --format=checkstyle ./qrcode-wrapper/*.sh |
+            reviewdog
+            -f="checkstyle"
+            -name="shellcheck"
+            -reporter="bitbucket-code-report"
+            -filter-mode="nofilter"
+            -fail-on-error="false"
+            -level="warning"
+
+workflows:
+  check:
+    jobs:
+      - syntax-check
