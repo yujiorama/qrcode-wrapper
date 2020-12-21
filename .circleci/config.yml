@@ -4,6 +4,9 @@ jobs:
   syntax-check:
     docker:
       - image: circleci/golang:1.15
+    environment:
+      BITBUCKET_USER: ${BITBUCKET_USER}
+      BITBUCKET_PASSWORD: ${BITBUCKET_PASSWORD}
     steps:
       - run:
           name: install taskfile
@@ -28,7 +31,7 @@ jobs:
             reviewdog
             -f="checkstyle"
             -name="shellcheck"
-            -reporter="github-pr-check"
+            -reporter="bitbucket-code-report"
             -filter-mode="added"
             -fail-on-error="false"
             -level="warning"
