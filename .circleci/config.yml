@@ -10,7 +10,7 @@ jobs:
     steps:
       - run:
           name: install taskfile
-          command: |
+          command: >
             curl -fsSL --output - https://taskfile.dev/install.sh | sh -s -- -d -b ${HOME}/bin
       - run:
           name: install shellcheck
@@ -21,12 +21,12 @@ jobs:
             ln -s ${HOME}/shellcheck-stable/shellcheck ${HOME}/bin/shellcheck
       - run:
           name: install reviewdog
-          command: |
+          command: >
             curl -fsSL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b ${HOME}/bin
       - checkout
       - run:
           name: shellcheck
-          command: |
+          command: >
             shellcheck --format=checkstyle ./qrcode-wrapper/*.sh |
             reviewdog
             -f="checkstyle"
