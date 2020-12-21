@@ -32,3 +32,8 @@ jobs:
             -filter-mode="added"
             -fail-on-error="false"
             -level="warning"
+
+workflows:
+  check:
+    jobs:
+      - syntax-check
