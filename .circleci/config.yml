@@ -8,18 +8,18 @@ jobs:
       - run:
           name: install taskfile
           command: |
-            curl -fsSL --output - https://taskfile.dev/install.sh | sh -- -d -b /usr/local/bin
+            curl -fsSL --output - https://taskfile.dev/install.sh | sh -s -- -d -b ${HOME}/bin
       - run:
           name: install shellcheck
           command: |
             curl -fsSL --output /var/tmp/shellcheck-stable.txz "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.$(uname -s | tr A-Z a-z).$(uname -m).tar.xz"
-            tar -xJvpf /var/tmp/shellcheck-stable.txz -C /usr/local
-            chmod 755 /usr/local/shellcheck-stable/shellcheck
-            ln -s /usr/local/shellcheck-stable/shellcheck /usr/local/bin/shellcheck
+            tar -xJvpf /var/tmp/shellcheck-stable.txz -C ${HOME}
+            chmod 755 ${HOME}/shellcheck-stable/shellcheck
+            ln -s ${HOME}/shellcheck-stable/shellcheck ${HOME}/bin/shellcheck
       - run:
           name: install reviewdog
           command: |
-            curl -fsSL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+            curl -fsSL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b ${HOME}/bin
       - checkout
       - run:
           name: shellcheck
