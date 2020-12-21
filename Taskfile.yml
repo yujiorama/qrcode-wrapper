@@ -32,7 +32,11 @@ tasks:
     cmds:
       - cmd: shellcheck --format=checkstyle ./qrcode-wrapper/*.sh > ./test-reports/{{.TASK}}/checkstyle.xml
         ignore_error: true
-      - xmlstarlet tr ./.checkstyle2junit.xslt < ./test-reports/{{.TASK}}/checkstyle.xml > ./test-reports/{{.TASK}}/report.xml
+      - >
+        xmlstarlet tr
+        -v ./.checkstyle2junit.xslt
+        < ./test-reports/{{.TASK}}/checkstyle.xml
+        > ./test-reports/{{.TASK}}/report.xml
       - rm -f ./test-reports/{{.TASK}}/checkstyle.xml
       - readlink -f ./test-reports/{{.TASK}}/report.xml
       - cat ./test-reports/{{.TASK}}/report.xml
@@ -53,7 +57,11 @@ tasks:
     cmds:
       - cmd: hadolint --format=checkstyle ./qrcode-wrapper/Dockerfile > ./test-reports/{{.TASK}}/checkstyle.xml
         ignore_error: true
-      - xmlstarlet tr ./.checkstyle2junit.xslt < ./test-reports/{{.TASK}}/checkstyle.xml > ./test-reports/{{.TASK}}/report.xml
+      - >
+        xmlstarlet tr
+        -v ./.checkstyle2junit.xslt
+        < ./test-reports/{{.TASK}}/checkstyle.xml
+        > ./test-reports/{{.TASK}}/report.xml
       - rm -f ./test-reports/{{.TASK}}/checkstyle.xml
       - readlink -f ./test-reports/{{.TASK}}/report.xml
       - cat ./test-reports/{{.TASK}}/report.xml

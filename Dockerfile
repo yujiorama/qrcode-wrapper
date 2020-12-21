@@ -14,30 +14,30 @@ RUN set -x \
  ;
 
 RUN set -x \
- && sh -c "$(wget --quiet -O - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin \
+ && sh -c "$(curl -fsSL --output - https://taskfile.dev/install.sh)" -- -d -b /usr/local/bin \
  && task --version \
  ;
 
 RUN set -x \
- && wget --quiet -O /usr/local/bin/hadolint "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT}/hadolint-$(uname -s | tr A-Z a-z)-$(uname -m)" \
+ && curl -fsSL --output /usr/local/bin/hadolint "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT}/hadolint-$(uname -s | tr A-Z a-z)-$(uname -m)" \
  && chmod +x /usr/local/bin/hadolint \
  && hadolint --version \
  ;
 
 RUN set -x \
- && wget --quiet -O - "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY}/trivy_${TRIVY}_$(uname -s | tr A-Z a-z)-64bit.tar.gz" | \
+ && curl -fsSL --output - "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY}/trivy_${TRIVY}_$(uname -s | tr A-Z a-z)-64bit.tar.gz" | \
     tar xzvf - -C /usr/local/bin \
  && chmod +x /usr/local/bin/trivy \
  && trivy --version \
  ;
 
 RUN set -x \
- && sh -c "$(wget --quiet -O - https://git.io/shellspec)" -- -b /usr/local/bin --yes \
+ && sh -c "$(curl -fsSL --output - https://git.io/shellspec)" -- -b /usr/local/bin --yes \
  && shellspec --version \
  ;
 
 RUN set -x \
- && wget --quiet -O - "https://download.docker.com/linux/static/stable/$(uname -m)/docker-${DOCKER}.tgz" | \
+ && curl -fsSL --output - "https://download.docker.com/linux/static/stable/$(uname -m)/docker-${DOCKER}.tgz" | \
     tar xzvpf - -C /usr/local \
  && chmod +x /usr/local/docker/docker \
  && ln -s /usr/local/docker/docker /usr/local/bin/docker \
