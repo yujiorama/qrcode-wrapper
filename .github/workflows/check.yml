@@ -3,38 +3,56 @@ on:
   pull_request:
 jobs:
   syntax-check:
-    name: runner / suggester / syntax-check
+    name: syntax-check
     runs-on: ubuntu-latest
     steps:
-      - name: install shellcheck(stable)
-        run: |
-          DEBIAN_FRONTEND=noninteractive apt-get -qq -y && apt-get install -qq -y xmlstarlet
-          curl -fsSL --output /var/tmp/shellcheck-stable.txz "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.$(uname -s | tr A-Z a-z).$(uname -m).tar.xz" | \
-          tar -xJf /var/tmp/shellcheck-stable.txz -C /usr/local
-          chmod 755 /usr/local/shellcheck-stable/shellcheck
-          ln -s /usr/local/shellcheck-stable/shellcheck /usr/local/bin/shellcheck
-          rm -f /var/tmp/shellcheck-stable.txz
-      - uses: actions/checkout@v2
-      - run: shellcheck --format=diff ./qrcode-wrapper/*.sh | patch -p1
-      - name: suggester / shellcheck
-        uses: ./
-        with:
-          tool_name: shellcheck
-
-  lint:
-    name: runner / suggester / lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+      - name: checkout
+        uses: actions/checkout@v2
       - uses: haya14busa/action-cond@v1
         id: reporter
         with:
           cond: ${{ github.event_name == 'pull_request' }}
           if_true: "github-pr-review"
           if_false: "github-check"
-      - uses: ./qrcode-wrapper
-      - uses: reviewdog/action-hadolint@v1
+      - name: shellcheck
+        uses: reviewdog/action-shellcheck@v1.5.0
         with:
           github_token: ${{ secrets.github_token }}
           reporter: ${{ steps.reporter.outputs.value }}
           level: warning
+          path: qrcode-wrapper
+          pattern: '*.sh'
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - uses: haya14busa/action-cond@v1
+        id: reporter
+        with:
+          cond: ${{ github.event_name == 'pull_request' }}
+          if_true: "github-pr-review"
+          if_false: "github-check"
+      - name: install reviewdog
+        uses: reviewdog/action-setup@v1
+      - name: hadolint
+        run: >
+          docker run --rm -i hadolint/hadolint < qrcode-wrapper/Dockerfile |
+          reviewdog -efm="%f:%l %m"
+          -name="${INPUT_TOOL_NAME}"
+          -reporter="${INPUT_REPORTER}"
+          -filter-mode="${INPUT_FILTER_MODE}"
+          -fail-on-error="${INPUT_FAIL_ON_ERROR}"
+          -level="${INPUT_LEVEL}"
+          "${INPUT_REVIEWDOG_FLAGS}"
+        with:
+          tool_name: hadolint
+          reporter: ${{ steps.reporter.outputs.value }}
+          level: warning
+          filter_mode: added
+          fail_on_error: false
+          reviewdog_flags: ''
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: "${{ secrets.github_token }}"
