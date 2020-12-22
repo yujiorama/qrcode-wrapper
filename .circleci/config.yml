@@ -112,9 +112,11 @@ jobs:
             --build-arg version="${CIRCLE_TAG}"
             ./qrcode-wrapper
       - run:
+          name: save image
+          command: docker save ${IMAGE_NAME} > ${HOME}/${IMAGE_NAME}.tar
+      - run:
           name: trivy
           command: >
-            docker save ${IMAGE_NAME} > ${HOME}/${IMAGE_NAME}.tar
             trivy image
             --exit-code 0
             --input=${HOME}/${IMAGE_NAME}.tar
