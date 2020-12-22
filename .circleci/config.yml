@@ -33,8 +33,40 @@ jobs:
             -filter-mode="nofilter"
             -fail-on-error="false"
             -level="warning"
+  lint:
+    docker:
+      - image: circleci/golang:1.15
+    environment:
+      HADOLINT: 1.19.0
+    steps:
+      - run:
+          name: install taskfile
+          command: >
+            curl -fsSL --output - https://taskfile.dev/install.sh | sh -s -- -d -b ${HOME}/bin
+      - run:
+          name: install hadolint
+          command: |
+            curl -fsSL --output ${HOME}/bin/hadolint "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT}/hadolint-$(uname -s | tr A-Z a-z)-$(uname -m)"
+            chmod +x ${HOME}/bin/hadolint
+      - run:
+          name: install reviewdog
+          command: >
+            curl -fsSL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b ${HOME}/bin
+      - checkout
+      - run:
+          name: hadolint
+          command: >
+            hadolint --format=checkstyle --config .hadolint.yaml qrcode-wrapper/Dockerfile |
+            reviewdog
+            -f="checkstyle"
+            -name="hadolint"
+            -reporter="bitbucket-code-report"
+            -filter-mode="nofilter"
+            -fail-on-error="false"
+            -level="warning"
 
 workflows:
   check:
     jobs:
       - syntax-check
+      - lint
