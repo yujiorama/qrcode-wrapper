@@ -4,6 +4,8 @@ jobs:
   syntax-check:
     docker:
       - image: circleci/golang:1.15
+    environment:
+      SHELLCHECK: stable
     steps:
       - run:
           name: install taskfile
@@ -11,11 +13,10 @@ jobs:
             curl -fsSL --output - https://taskfile.dev/install.sh | sh -s -- -d -b ${HOME}/bin
       - run:
           name: install shellcheck
-          command: |
-            curl -fsSL --output /var/tmp/shellcheck-stable.txz "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.$(uname -s | tr A-Z a-z).$(uname -m).tar.xz"
-            tar -xJvpf /var/tmp/shellcheck-stable.txz -C ${HOME}
-            chmod 755 ${HOME}/shellcheck-stable/shellcheck
-            ln -s ${HOME}/shellcheck-stable/shellcheck ${HOME}/bin/shellcheck
+          command: >
+            curl -fsSL --output - "https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK}/shellcheck-${SHELLCHECK}.$(uname -s | tr A-Z a-z).$(uname -m).tar.xz" |
+            tar -xJvf - --strip=1 --show-transformed-names -C ${HOME}/bin shellcheck-${SHELLCHECK}/shellcheck;
+            chmod 755 ${HOME}/bin/shellcheck
       - run:
           name: install reviewdog
           command: >
@@ -32,8 +33,40 @@ jobs:
             -filter-mode="nofilter"
             -fail-on-error="false"
             -level="warning"
+  lint:
+    docker:
+      - image: circleci/golang:1.15
+    environment:
+      HADOLINT: 1.19.0
+    steps:
+      - run:
+          name: install taskfile
+          command: >
+            curl -fsSL --output - https://taskfile.dev/install.sh | sh -s -- -d -b ${HOME}/bin
+      - run:
+          name: install hadolint
+          command: |
+            curl -fsSL --output ${HOME}/bin/hadolint "https://github.com/hadolint/hadolint/releases/download/v${HADOLINT}/hadolint-$(uname -s | tr A-Z a-z)-$(uname -m)"
+            chmod +x ${HOME}/bin/hadolint
+      - run:
+          name: install reviewdog
+          command: >
+            curl -fsSL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b ${HOME}/bin
+      - checkout
+      - run:
+          name: hadolint
+          command: >
+            hadolint --format=checkstyle --config .hadolint.yaml qrcode-wrapper/Dockerfile |
+            reviewdog
+            -f="checkstyle"
+            -name="hadolint"
+            -reporter="bitbucket-code-report"
+            -filter-mode="nofilter"
+            -fail-on-error="false"
+            -level="warning"
 
 workflows:
   check:
     jobs:
       - syntax-check
+      - lint
