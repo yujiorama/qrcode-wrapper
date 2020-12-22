@@ -4,6 +4,8 @@ jobs:
   syntax-check:
     docker:
       - image: circleci/golang:1.15
+    environment:
+      SHELLCHECK: stable
     steps:
       - run:
           name: install taskfile
@@ -11,11 +13,10 @@ jobs:
             curl -fsSL --output - https://taskfile.dev/install.sh | sh -s -- -d -b ${HOME}/bin
       - run:
           name: install shellcheck
-          command: |
-            curl -fsSL --output /var/tmp/shellcheck-stable.txz "https://github.com/koalaman/shellcheck/releases/download/stable/shellcheck-stable.$(uname -s | tr A-Z a-z).$(uname -m).tar.xz"
-            tar -xJvpf /var/tmp/shellcheck-stable.txz -C ${HOME}
-            chmod 755 ${HOME}/shellcheck-stable/shellcheck
-            ln -s ${HOME}/shellcheck-stable/shellcheck ${HOME}/bin/shellcheck
+          command: >
+            curl -fsSL --output - "https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK}/shellcheck-${SHELLCHECK}.$(uname -s | tr A-Z a-z).$(uname -m).tar.xz" |
+            tar -xJvf - --strip=1 --show-transformed-names -C ${HOME}/bin shellcheck-${SHELLCHECK}/shellcheck;
+            chmod 755 ${HOME}/bin/shellcheck
       - run:
           name: install reviewdog
           command: >
