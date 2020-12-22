@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  jira: circleci/jira@1.3.0
+
 jobs:
   syntax-check:
     docker:
@@ -64,9 +67,17 @@ jobs:
             -filter-mode="nofilter"
             -fail-on-error="false"
             -level="warning"
+  build:
+    docker:
+      - image: circleci/node:10
+    steps:
+      - run: echo "hello"
 
 workflows:
   check:
     jobs:
       - syntax-check
       - lint
+      - build:
+          post-steps:
+            - jira/notify
