@@ -13,7 +13,7 @@ jobs:
       - run:
           name: install taskfile
           command: >
-            curl -fsSL --output - https://taskfile.dev/install.sh | sh -s -- -d -b ${HOME}/bin
+            curl -fsSL --output - https://taskfile.dev/install.sh | sh -s -- -b ${HOME}/bin
       - run:
           name: install shellcheck
           command: >
@@ -45,7 +45,7 @@ jobs:
       - run:
           name: install taskfile
           command: >
-            curl -fsSL --output - https://taskfile.dev/install.sh | sh -s -- -d -b ${HOME}/bin
+            curl -fsSL --output - https://taskfile.dev/install.sh | sh -s -- -b ${HOME}/bin
       - run:
           name: install hadolint
           command: |
@@ -69,9 +69,76 @@ jobs:
             -level="warning"
   build:
     docker:
-      - image: circleci/node:10
+      - image: circleci/golang:1.15
+    environment:
+      TRIVY: 0.14.0
+      TRIVY_ROOT: /home/circleci/trivy
+      SHELLSPEC: 0.27.2
+      IMAGE_NAME: qrcode-wrapper
     steps:
-      - run: echo "hello"
+      - run:
+          name: install taskfile
+          command: >
+            curl -fsSL --output - https://taskfile.dev/install.sh | sh -s -- -b ${HOME}/bin
+      - run:
+          name: install trivy
+          command: |
+            mkdir -p ${TRIVY_ROOT}
+            curl -fsSL --output - "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY}/trivy_${TRIVY}_$(uname -s | tr A-Z a-z)-64bit.tar.gz" | tar xzvf - -C ${TRIVY_ROOT}
+            chmod 755 ${TRIVY_ROOT}/trivy
+            ln -s ${TRIVY_ROOT}/trivy ${HOME}/bin/trivy
+      - run:
+          name: install shellspec
+          command: |
+            curl -fsSL --output - https://git.io/shellspec | sh -s ${SHELLSPEC} --yes -b ${HOME}/bin
+      - checkout
+      - setup_remote_docker:
+          docker_layer_caching: false
+      - run:
+          name: build image
+          command: >
+            docker build
+            -f ./qrcode-wrapper/Dockerfile
+            -t ${IMAGE_NAME}
+            --build-arg build_date="$(date --rfc-3339=seconds)"
+            --build-arg name="${CIRCLE_PROJECT_USERNAME}/${IMAGE_NAME}"
+            --build-arg description="encode/decode QR code image"
+            --build-arg usage="${CIRCLE_REPOSITORY_URL}/src/main/README.md"
+            --build-arg url="${CIRCLE_REPOSITORY_URL}"
+            --build-arg vcs_url="${CIRCLE_REPOSITORY_URL}"
+            --build-arg vcs_ref="${CIRCLE_SHA1}"
+            --build-arg version="${CIRCLE_TAG}"
+            ./qrcode-wrapper
+      - run:
+          name: save image
+          command: docker save ${IMAGE_NAME} > ${HOME}/${IMAGE_NAME}.tar
+      - store_test_results:
+          path: test-reports
+      - run:
+          name: create test results directory
+          command: mkdir -p test-reports
+      - run:
+          name: trivy
+          command: >
+            trivy image
+            --exit-code 0
+            --input=${HOME}/${IMAGE_NAME}.tar
+            --format=template
+            --template="@${TRIVY_ROOT}/contrib/junit.tpl"
+            --output=./test-reports/trivy.xml
+            --severity=MEDIUM,HIGH,CRITICAL
+            --ignorefile=./.trivyignore
+      - run:
+          name: shellspec
+          command: >
+            shellspec
+            --shell auto
+            --no-banner
+            --no-color
+            --env IMAGE_NAME=${IMAGE_NAME}
+            --format junit
+            ./test/spec
+            > ./test-reports/shellspec.xml
 
 workflows:
   check:
@@ -79,5 +146,8 @@ workflows:
       - syntax-check
       - lint
       - build:
+          requires:
+            - syntax-check
+            - lint
           post-steps:
             - jira/notify
