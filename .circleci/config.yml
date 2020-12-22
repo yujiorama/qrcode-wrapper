@@ -74,7 +74,7 @@ jobs:
       TRIVY: 0.14.0
       TRIVY_ROOT: /home/circleci/trivy
       SHELLSPEC: 0.27.2
-      IMAGE_NAME: $CIRCLE_PROJECT_REPONAME
+      IMAGE_NAME: qrcode-wrapper
     steps:
       - run:
           name: install taskfile
