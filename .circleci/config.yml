@@ -92,8 +92,6 @@ jobs:
           command: |
             curl -fsSL --output - https://git.io/shellspec | sh -s ${SHELLSPEC} --yes -b ${HOME}/bin
       - checkout
-      - store_test_results:
-          path: test-reports
       - setup_remote_docker:
           docker_layer_caching: false
       - run:
@@ -114,6 +112,11 @@ jobs:
       - run:
           name: save image
           command: docker save ${IMAGE_NAME} > ${HOME}/${IMAGE_NAME}.tar
+      - store_test_results:
+          path: test-reports
+      - run:
+          name: create test results directory
+          command: mkdir -p test-reports
       - run:
           name: trivy
           command: >
